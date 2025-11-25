@@ -92,6 +92,38 @@ export const PROVIDER_TEMPLATES: ProviderTemplate[] = [
 		}),
 	},
 	{
+		id: 'mlx-lm',
+		name: 'MLX-LM (Apple Silicon)',
+		fields: [
+			{
+				name: 'providerName',
+				prompt: 'Provider name',
+				default: 'MLX-LM',
+				required: true,
+			},
+			{
+				name: 'baseUrl',
+				prompt: 'Base URL',
+				default: 'http://localhost:8080/v1',
+				validator: urlValidator,
+			},
+			{
+				name: 'model',
+				prompt: 'Model name(s) (comma-separated, e.g., mlx-community/Qwen2.5-Coder-32B-Instruct-4bit)',
+				default: '',
+				required: true,
+			},
+		],
+		buildConfig: answers => ({
+			name: answers.providerName || 'MLX-LM',
+			baseUrl: answers.baseUrl || 'http://localhost:8080/v1',
+			models: answers.model
+				.split(',')
+				.map(m => m.trim())
+				.filter(Boolean),
+		}),
+	},
+	{
 		id: 'lmstudio',
 		name: 'LM Studio',
 		fields: [

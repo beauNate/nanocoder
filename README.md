@@ -30,7 +30,13 @@ A local-first CLI coding agent that brings the power of agentic coding tools lik
 
 ### What is Nanocoder?
 
-Nanocoder is a local-first CLI coding agent that brings the power of agentic coding tools like Claude Code and Gemini CLI to local models or controlled APIs like OpenRouter. Built with privacy and control in mind, Nanocoder supports any AI provider that has an OpenAI compatible end-point, tool and non-tool calling models.
+Nanocoder is a universal, IDE-agnostic CLI coding agent that works with any editor or development environment. Built with privacy and control in mind, Nanocoder provides a complete AI coding solution with built-in model installation and management for local inference (MLX-LM, llama.cpp, Ollama) or cloud APIs (OpenRouter, OpenAI, Anthropic).
+
+**Key Features:**
+- **Built-in Model Management**: Automatically install MLX-LM or llama.cpp and download models without manual setup
+- **IDE-Agnostic**: Works with any code editor (VS Code, Vim, Emacs, Sublime, or standalone)
+- **Fully Local or Cloud**: Run completely offline with local models or use cloud providers
+- **Universal Compatibility**: Supports any OpenAI-compatible API endpoint
 
 ### How is this different to OpenCode?
 
@@ -505,7 +511,19 @@ Generate comprehensive unit tests for {{component}}. Include:
 
 ## Features
 
-### Multi-Provider Support
+### 🚀 Built-in Model Management
+
+Nanocoder provides complete, integrated model management that works out of the box:
+
+- **Automatic Installation**: Install MLX-LM, llama.cpp, or Ollama with a single command
+- **Model Downloads**: Download and manage models directly from Nanocoder
+- **Server Management**: Start, stop, and monitor inference servers from within Nanocoder
+- **Zero External Dependencies**: Everything you need is built-in - no external tools required
+- **IDE-Agnostic**: Works with any code editor or as a standalone tool
+
+This means you can go from zero to running local AI models in minutes, without leaving Nanocoder.
+
+### 🌐 Multi-Provider Support
 
 - **Universal OpenAI compatibility**: Works with any OpenAI-compatible API
 - **Local providers**: Ollama, LM Studio, vLLM, LocalAI, llama.cpp
@@ -514,14 +532,15 @@ Generate comprehensive unit tests for {{component}}. Include:
 - **Per-provider preferences**: Remembers your preferred model for each provider
 - **Dynamic configuration**: Add any provider with just a name and endpoint
 
-### Advanced Tool System
+### 🛠️ Advanced Tool System
 
-- **Built-in tools**: File operations, bash command execution
+- **Built-in tools**: File operations, bash command execution - no external dependencies
 - **MCP (Model Context Protocol) servers**: Extend capabilities with any MCP-compatible tool
 - **Dynamic tool loading**: Tools are loaded on-demand from configured MCP servers
 - **Tool approval**: Optional confirmation before executing potentially destructive operations
+- **Native integration**: Tools work seamlessly with models - no separate "tool caller" needed
 
-### Custom Command System
+### ⚙️ Custom Command System
 
 - **Markdown-based commands**: Define reusable prompts in `.nanocoder/commands/`
 - **Template variables**: Use `{{parameter}}` syntax for dynamic content
@@ -529,20 +548,20 @@ Generate comprehensive unit tests for {{component}}. Include:
 - **Autocomplete support**: Tab completion for command discovery
 - **Rich metadata**: YAML frontmatter for descriptions, aliases, and parameters
 
-### Enhanced User Experience
+### ✨ Enhanced User Experience
 
 - **Smart autocomplete**: Tab completion for commands with real-time suggestions
 - **Colorized output**: Syntax highlighting and structured display
 - **Session persistence**: Maintains context and preferences across sessions
 - **Real-time streaming**: Live token-by-token streaming of AI responses (toggle with `/streaming`)
 - **Real-time indicators**: Shows token usage, timing, and processing status
-- **First-time directory security disclaimer**: Prompts on first run and stores a per-project trust decision to prevent accidental exposure of local code or secrets.
+- **First-time directory security disclaimer**: Prompts on first run and stores a per-project trust decision to prevent accidental exposure of local code or secrets
 - **Development modes**: Three modes to control tool execution behavior (toggle with Shift+Tab)
   - **Normal mode**: Standard tool confirmation flow - review each tool call before execution
   - **Auto-accept mode**: Automatically accepts all tool calls without confirmation for faster workflows
   - **Plan mode**: AI suggests actions but doesn't execute tools - useful for planning and exploration
 
-### Developer Features
+### 🔧 Developer Features
 
 - **TypeScript-first**: Full type safety and IntelliSense support
 - **Extensible architecture**: Plugin-style system for adding new capabilities

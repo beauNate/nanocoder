@@ -2,7 +2,7 @@
 	"name": "@nanocollective/nanocoder",
 	"main": "dist/cli.js",
 	"version": "1.16.5",
-	"description": "A local-first CLI coding agent that brings the power of agentic coding tools like Claude Code and Gemini CLI to local models or controlled APIs like OpenRouter",
+	"description": "Universal, IDE-agnostic CLI coding agent with built-in model installation and management for local inference (MLX-LM, llama.cpp, Ollama) or cloud APIs",
 	"keywords": [
 		"cli",
 		"ai",
@@ -12,7 +12,13 @@
 		"openrouter",
 		"local",
 		"typescript",
-		"llama-cpp"
+		"llama-cpp",
+		"mlx",
+		"mlx-lm",
+		"ide-agnostic",
+		"universal",
+		"model-management",
+		"local-first"
 	],
 	"author": "Nano Collective",
 	"license": "MIT",

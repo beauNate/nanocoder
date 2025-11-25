@@ -4,6 +4,8 @@ A comprehensive, all-in-one guide for setting up a fully private, offline AI cod
 
 **No outgoing network connections. Complete data privacy. Local-first AI coding.**
 
+> **⚡ New: Built-in Model Management** - Nanocoder now includes built-in capabilities to install MLX-LM and llama.cpp, download models, and manage inference servers automatically. This guide covers both the new automated approach and manual setup for those who prefer more control.
+
 ---
 
 ## Table of Contents
