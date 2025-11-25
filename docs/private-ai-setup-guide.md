@@ -215,8 +215,9 @@ MLX is Apple's machine learning framework, specifically optimized for Apple Sili
 # Check macOS version
 sw_vers
 
-# Check available memory
+# Check available memory (macOS)
 sysctl hw.memsize | awk '{print $2/1024/1024/1024 " GB"}'
+# Alternative for Linux: free -h
 
 # Check disk space
 df -h /
@@ -226,8 +227,11 @@ df -h /
 
 ```bash
 # Install Homebrew (if not installed)
+# Review the script at https://brew.sh before running
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
+
+> **Security Note:** Always review shell scripts before executing them. You can inspect the Homebrew installer at https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
 
 ### 1.3 Install Node.js
 
@@ -655,7 +659,21 @@ chmod +x ~/bin/stop-ai-coding.sh
 
 ### 11.3 Optional: LaunchAgent for Auto-Start
 
-Create `~/Library/LaunchAgents/com.nanocoder.backend.plist`:
+First, create a wrapper script at `~/bin/nanocoder-backend.sh`:
+
+```bash
+#!/bin/bash
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+source "$HOME/.venv/nanocoder/bin/activate"
+exec mlx_lm.server --model mlx-community/Qwen2.5-Coder-32B-Instruct-4bit --port 8080
+```
+
+Make it executable:
+```bash
+chmod +x ~/bin/nanocoder-backend.sh
+```
+
+Then create `~/Library/LaunchAgents/com.nanocoder.backend.plist`:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -667,13 +685,18 @@ Create `~/Library/LaunchAgents/com.nanocoder.backend.plist`:
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
+        <string>-l</string>
         <string>-c</string>
-        <string>source ~/.venv/nanocoder/bin/activate && mlx_lm.server --model mlx-community/Qwen2.5-Coder-32B-Instruct-4bit --port 8080</string>
+        <string>$HOME/bin/nanocoder-backend.sh</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>
     <true/>
+    <key>StandardOutPath</key>
+    <string>/tmp/nanocoder-backend.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/nanocoder-backend.error.log</string>
 </dict>
 </plist>
 ```
@@ -686,9 +709,14 @@ launchctl load ~/Library/LaunchAgents/com.nanocoder.backend.plist
 ### 11.4 Firewall Configuration (Maximum Privacy)
 
 ```bash
+# Find nanocoder executable path first
+NANOCODER_PATH=$(npm root -g)/@nanocollective/nanocoder
+# Or if installed via Homebrew:
+# NANOCODER_PATH=$(brew --prefix)/bin/nanocoder
+
 # Block application from internet (optional)
-sudo /usr/libexec/ApplicationFirewall/socketfilterfw --add $(which nanocoder)
-sudo /usr/libexec/ApplicationFirewall/socketfilterfw --blockapp $(which nanocoder)
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw --add "$NANOCODER_PATH"
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw --blockapp "$NANOCODER_PATH"
 ```
 
 Or use Little Snitch/Lulu to monitor and block all outgoing connections.
