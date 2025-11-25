@@ -1,23 +1,32 @@
-# Nanocoder Installation & Framework Planning Guide
+# Nanocoder Private AI Setup: Complete Guide
 
-A step-by-step installation guide and framework for setting up Nanocoder with private, local AI models. This document provides a structured plan for developers to deploy Nanocoder from development to production.
+A comprehensive, all-in-one guide for setting up a fully private, offline AI coding environment with Nanocoder. This document covers everything from hardware requirements to production deployment, specifically optimized for Apple M4 Max with 36GB unified memory.
 
-## Table of Contents
-
-- [Overview](#overview)
-- [Phase 1: Prerequisites & Environment Setup](#phase-1-prerequisites--environment-setup)
-- [Phase 2: Inference Backend Selection](#phase-2-inference-backend-selection)
-- [Phase 3: Model Selection](#phase-3-model-selection)
-- [Phase 4: Nanocoder Installation](#phase-4-nanocoder-installation)
-- [Phase 5: Configuration](#phase-5-configuration)
-- [Phase 6: Validation & Testing](#phase-6-validation--testing)
-- [Phase 7: Production Deployment](#phase-7-production-deployment)
-- [Framework Template](#framework-template)
-- [Troubleshooting](#troubleshooting)
+**No outgoing network connections. Complete data privacy. Local-first AI coding.**
 
 ---
 
-## Overview
+## Table of Contents
+
+1. [Overview](#1-overview)
+2. [Hardware & Software Requirements](#2-hardware--software-requirements)
+3. [Recommended Local Models](#3-recommended-local-models)
+4. [Inference Backend Comparison](#4-inference-backend-comparison)
+5. [Phase 1: Prerequisites Setup](#5-phase-1-prerequisites-setup)
+6. [Phase 2: Inference Backend Installation](#6-phase-2-inference-backend-installation)
+7. [Phase 3: Model Download](#7-phase-3-model-download)
+8. [Phase 4: Nanocoder Installation](#8-phase-4-nanocoder-installation)
+9. [Phase 5: Configuration](#9-phase-5-configuration)
+10. [Phase 6: Validation & Testing](#10-phase-6-validation--testing)
+11. [Phase 7: Production Deployment](#11-phase-7-production-deployment)
+12. [Memory Management](#12-memory-management)
+13. [Framework Template](#13-framework-template)
+14. [Troubleshooting](#14-troubleshooting)
+15. [Quick Reference](#15-quick-reference)
+
+---
+
+## 1. Overview
 
 ### What You'll Build
 
@@ -36,32 +45,171 @@ A step-by-step installation guide and framework for setting up Nanocoder with pr
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Architecture Decisions
+### Key Architecture Decisions
 
 | Decision | Options | Recommendation |
 |----------|---------|----------------|
 | **Inference Backend** | MLX-LM, Ollama, llama.cpp, LM Studio | MLX-LM (performance) or Ollama (ease) |
 | **Model Size** | 7B, 13B, 16B, 22B, 32B | Based on available RAM |
 | **Quantization** | Q4, Q5, Q6, Q8, FP16 | Q4_K_M for large models, Q8_0 for small |
-| **Network Mode** | Local-only, Hybrid, Cloud | Local-only for privacy |
+| **Network Mode** | Local-only, Hybrid, Cloud | **Local-only for privacy** |
+
+### Privacy Guarantees
+
+This configuration ensures:
+- **Only localhost URLs** - All providers point to `localhost`
+- **No cloud providers** - OpenRouter, OpenAI, etc. are excluded
+- **No MCP remote servers** - Only local MCP servers if needed
+- **No API keys required** - Local models don't need authentication
 
 ---
 
-## Phase 1: Prerequisites & Environment Setup
+## 2. Hardware & Software Requirements
 
-### 1.1 Hardware Assessment
+### Target Hardware: Apple M4 Max 36GB
 
-**Minimum Requirements:**
+| Component | Specification |
+|-----------|---------------|
+| **Chip** | Apple M4 Max |
+| **Unified Memory** | 36GB |
+| **Architecture** | Apple Silicon (ARM64) |
+| **GPU** | Integrated (30-40 core) |
+
+The unified memory architecture allows models to leverage both CPU and GPU memory seamlessly, enabling larger models than traditional discrete GPU setups with similar VRAM.
+
+### Minimum Requirements
+
 - 16GB RAM (8GB+ available for model)
 - Apple Silicon M1/M2/M3/M4 or x86_64 with AVX2
 - 50GB+ free disk space
+- macOS Ventura or later (Sequoia recommended)
 
-**Recommended (M4 Max 36GB):**
-- 36GB Unified Memory
-- 512GB+ SSD
-- macOS Sequoia or later
+### Software Prerequisites
 
-### 1.2 Software Prerequisites
+- Node.js 18+
+- Homebrew
+- Python 3.10+ (for MLX-LM)
+- Git
+
+---
+
+## 3. Recommended Local Models
+
+### Tier 1: Best Performance (Fits in 36GB)
+
+| Model | Quantization | Size | Use Case | Notes |
+|-------|--------------|------|----------|-------|
+| **Qwen2.5-Coder 32B** | Q4_K_M | ~18GB | Production coding | Best overall coding model for your RAM |
+| **DeepSeek-Coder-V2-Lite 16B** | Q8_0 | ~16GB | Fast coding | Excellent speed/quality balance |
+| **Codestral 22B** | Q5_K_M | ~15GB | Code generation | Mistral's coding specialist |
+
+### Tier 2: Balanced (Leave Room for Context)
+
+| Model | Quantization | Size | Use Case | Notes |
+|-------|--------------|------|----------|-------|
+| **Llama 3.2 11B** | Q8_0 | ~12GB | General + coding | Versatile, good at both |
+| **CodeLlama 13B** | Q8_0 | ~14GB | Code completion | Meta's coding model |
+| **Phi-3 Medium 14B** | Q6_K | ~11GB | Reasoning + code | Microsoft's efficient model |
+
+### Tier 3: Lightweight (Maximum Context Window)
+
+| Model | Quantization | Size | Use Case | Notes |
+|-------|--------------|------|----------|-------|
+| **Qwen2.5-Coder 7B** | Q8_0 | ~8GB | Quick iterations | Fast responses |
+| **DeepSeek-Coder 6.7B** | Q8_0 | ~7GB | Code completion | Efficient coding |
+| **CodeGemma 7B** | Q8_0 | ~8GB | Code generation | Google's coding model |
+
+### Model Selection by RAM
+
+| RAM Available | Recommended Model | Quantization | Size |
+|---------------|-------------------|--------------|------|
+| **8-12GB** | Qwen2.5-Coder 7B | Q8_0 | ~8GB |
+| **12-16GB** | DeepSeek-Coder 6.7B | Q8_0 | ~7GB |
+| **16-24GB** | DeepSeek-Coder-V2-Lite 16B | Q8_0 | ~16GB |
+| **24-32GB** | Codestral 22B | Q5_K_M | ~15GB |
+| **32GB+** | Qwen2.5-Coder 32B | Q4_K_M | ~18GB |
+
+---
+
+## 4. Inference Backend Comparison
+
+### Decision Matrix
+
+| Factor | MLX-LM | Ollama | llama.cpp | LM Studio |
+|--------|--------|--------|-----------|-----------|
+| **Performance on Apple Silicon** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ |
+| **Ease of Setup** | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
+| **Model Management** | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐⭐ |
+| **Memory Efficiency** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ |
+| **Scriptability** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐ |
+| **Open Source** | ✅ | ✅ | ✅ | ❌ |
+
+### MLX-LM (Recommended for M4 Max)
+
+**Rating: ⭐⭐⭐⭐⭐ Best Performance**
+
+MLX is Apple's machine learning framework, specifically optimized for Apple Silicon's unified memory architecture.
+
+**Pros:**
+- Native Apple Silicon optimization
+- Best inference speed on M4 Max
+- Efficient unified memory utilization
+- Direct Metal acceleration
+- Active development by Apple
+
+**Cons:**
+- Requires Python environment
+- Smaller model ecosystem than Ollama
+- More technical setup
+
+### Ollama (Recommended for Ease of Use)
+
+**Rating: ⭐⭐⭐⭐⭐ Best Developer Experience**
+
+**Pros:**
+- Excellent model management
+- Easy installation and updates
+- Good Metal GPU acceleration
+- Large model library
+- Active community
+
+**Cons:**
+- Slightly slower than MLX on Apple Silicon
+- Less memory-efficient than MLX
+
+### llama.cpp
+
+**Rating: ⭐⭐⭐⭐ Excellent Backend**
+
+**Pros:**
+- Excellent Metal backend
+- Fine-grained control
+- GGUF format support
+- Active development
+
+**Cons:**
+- More manual setup required
+- No built-in model management
+
+### LM Studio
+
+**Rating: ⭐⭐⭐⭐ Good GUI Option**
+
+**Pros:**
+- User-friendly GUI
+- Built-in model browser
+- Uses llama.cpp under the hood
+
+**Cons:**
+- GUI adds overhead
+- Less scriptable
+- Closed source
+
+---
+
+## 5. Phase 1: Prerequisites Setup
+
+### 1.1 Check System Requirements
 
 ```bash
 # Check macOS version
@@ -70,9 +218,20 @@ sw_vers
 # Check available memory
 sysctl hw.memsize | awk '{print $2/1024/1024/1024 " GB"}'
 
+# Check disk space
+df -h /
+```
+
+### 1.2 Install Homebrew
+
+```bash
 # Install Homebrew (if not installed)
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
 
+### 1.3 Install Node.js
+
+```bash
 # Install Node.js 18+
 brew install node@18
 
@@ -81,7 +240,7 @@ node --version  # Should be 18.x or higher
 npm --version
 ```
 
-### 1.3 Python Environment (for MLX-LM)
+### 1.4 Setup Python Environment (for MLX-LM)
 
 ```bash
 # Install Python 3.10+ if needed
@@ -95,7 +254,8 @@ source ~/.venv/nanocoder/bin/activate
 pip install --upgrade pip
 ```
 
-**Checklist - Phase 1:**
+### Checklist - Phase 1
+
 - [ ] Hardware meets minimum requirements
 - [ ] macOS/Linux compatible version
 - [ ] Homebrew installed
@@ -105,22 +265,9 @@ pip install --upgrade pip
 
 ---
 
-## Phase 2: Inference Backend Selection
+## 6. Phase 2: Inference Backend Installation
 
-### 2.1 Decision Matrix
-
-| Factor | MLX-LM | Ollama | llama.cpp | LM Studio |
-|--------|--------|--------|-----------|-----------|
-| **Performance on Apple Silicon** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ |
-| **Ease of Setup** | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
-| **Model Management** | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐⭐ |
-| **Memory Efficiency** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ |
-| **Scriptability** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐ |
-| **Open Source** | ✅ | ✅ | ✅ | ❌ |
-
-### 2.2 Installation Instructions
-
-#### Option A: MLX-LM (Recommended for Apple Silicon)
+### Option A: MLX-LM (Recommended for Apple Silicon)
 
 ```bash
 # Activate virtual environment
@@ -133,7 +280,7 @@ pip install mlx-lm
 python -c "import mlx_lm; print('MLX-LM installed successfully')"
 ```
 
-#### Option B: Ollama (Recommended for Ease of Use)
+### Option B: Ollama (Recommended for Ease of Use)
 
 ```bash
 # Install via Homebrew
@@ -143,7 +290,7 @@ brew install ollama
 ollama --version
 ```
 
-#### Option C: llama.cpp
+### Option C: llama.cpp
 
 ```bash
 # Install via Homebrew
@@ -153,7 +300,7 @@ brew install llama.cpp
 llama-cli --version
 ```
 
-#### Option D: LM Studio
+### Option D: LM Studio
 
 ```bash
 # Download from https://lmstudio.ai/
@@ -161,30 +308,17 @@ llama-cli --version
 brew install --cask lm-studio
 ```
 
-**Checklist - Phase 2:**
+### Checklist - Phase 2
+
 - [ ] Selected inference backend based on requirements
 - [ ] Backend installed and verified
 - [ ] Understand backend's configuration options
 
 ---
 
-## Phase 3: Model Selection
+## 7. Phase 3: Model Download
 
-### 3.1 Model Selection Guide
-
-**By Available RAM:**
-
-| RAM Available | Recommended Model | Quantization | Size |
-|---------------|-------------------|--------------|------|
-| **8-12GB** | Qwen2.5-Coder 7B | Q8_0 | ~8GB |
-| **12-16GB** | DeepSeek-Coder 6.7B | Q8_0 | ~7GB |
-| **16-24GB** | DeepSeek-Coder-V2-Lite 16B | Q8_0 | ~16GB |
-| **24-32GB** | Codestral 22B | Q5_K_M | ~15GB |
-| **32GB+** | Qwen2.5-Coder 32B | Q4_K_M | ~18GB |
-
-### 3.2 Download Models
-
-#### For MLX-LM:
+### For MLX-LM
 
 ```bash
 # Models download automatically on first use
@@ -192,7 +326,7 @@ brew install --cask lm-studio
 python -c "from mlx_lm import load; load('mlx-community/Qwen2.5-Coder-32B-Instruct-4bit')"
 ```
 
-#### For Ollama:
+### For Ollama
 
 ```bash
 # Pull model
@@ -202,11 +336,10 @@ ollama pull qwen2.5-coder:32b-instruct-q4_K_M
 ollama list
 ```
 
-#### For llama.cpp:
+### For llama.cpp
 
 ```bash
 # Download GGUF model from Hugging Face
-# Example: Download to ~/models/
 mkdir -p ~/models
 cd ~/models
 
@@ -217,7 +350,8 @@ huggingface-cli download TheBloke/Qwen2.5-Coder-32B-Instruct-GGUF \
     --local-dir .
 ```
 
-**Checklist - Phase 3:**
+### Checklist - Phase 3
+
 - [ ] Calculated available RAM for model
 - [ ] Selected appropriate model and quantization
 - [ ] Downloaded model files
@@ -225,11 +359,9 @@ huggingface-cli download TheBloke/Qwen2.5-Coder-32B-Instruct-GGUF \
 
 ---
 
-## Phase 4: Nanocoder Installation
+## 8. Phase 4: Nanocoder Installation
 
-### 4.1 Install Nanocoder
-
-#### Option A: NPM (Recommended)
+### Option A: NPM (Recommended)
 
 ```bash
 # Install globally
@@ -239,7 +371,7 @@ npm install -g @nanocollective/nanocoder
 nanocoder --version
 ```
 
-#### Option B: Homebrew
+### Option B: Homebrew
 
 ```bash
 # Add tap
@@ -252,7 +384,7 @@ brew install nanocoder
 nanocoder --version
 ```
 
-#### Option C: From Source (Development)
+### Option C: From Source (Development)
 
 ```bash
 # Clone repository
@@ -269,23 +401,24 @@ npm run build
 npm run start
 ```
 
-**Checklist - Phase 4:**
+### Checklist - Phase 4
+
 - [ ] Nanocoder installed
 - [ ] Version verified
 - [ ] Can run `nanocoder` command
 
 ---
 
-## Phase 5: Configuration
+## 9. Phase 5: Configuration
 
-### 5.1 Create Configuration Directory
+### 9.1 Create Configuration Directory
 
 ```bash
 # Create config directory
 mkdir -p ~/.config/nanocoder
 ```
 
-### 5.2 Create agents.config.json
+### 9.2 Create agents.config.json (Local-Only Setup)
 
 Create `~/.config/nanocoder/agents.config.json`:
 
@@ -294,19 +427,31 @@ Create `~/.config/nanocoder/agents.config.json`:
 	"nanocoder": {
 		"providers": [
 			{
-				"name": "Local-MLX",
+				"name": "MLX-LM (Recommended)",
 				"baseUrl": "http://localhost:8080/v1",
-				"models": ["mlx-community/Qwen2.5-Coder-32B-Instruct-4bit"],
+				"models": [
+					"mlx-community/Qwen2.5-Coder-32B-Instruct-4bit",
+					"mlx-community/DeepSeek-Coder-V2-Lite-Instruct-8bit"
+				],
 				"requestTimeout": -1,
 				"socketTimeout": -1
 			},
 			{
-				"name": "Local-Ollama",
+				"name": "Ollama",
 				"baseUrl": "http://localhost:11434/v1",
 				"models": [
 					"qwen2.5-coder:32b-instruct-q4_K_M",
-					"deepseek-coder-v2:16b-lite-instruct-q8_0"
+					"deepseek-coder-v2:16b-lite-instruct-q8_0",
+					"codestral:22b-v0.1-q5_K_M",
+					"llama3.2:11b-instruct-q8_0"
 				],
+				"requestTimeout": -1,
+				"socketTimeout": -1
+			},
+			{
+				"name": "llama.cpp",
+				"baseUrl": "http://localhost:8081/v1",
+				"models": ["local-model"],
 				"requestTimeout": -1,
 				"socketTimeout": -1
 			}
@@ -315,7 +460,33 @@ Create `~/.config/nanocoder/agents.config.json`:
 }
 ```
 
-### 5.3 Start Inference Backend
+### 9.3 Optional: Local-Only MCP Servers
+
+If you need MCP functionality, use only local servers:
+
+```json
+{
+	"nanocoder": {
+		"providers": [
+			// ... providers from above
+		],
+		"mcpServers": [
+			{
+				"name": "filesystem",
+				"transport": "stdio",
+				"command": "npx",
+				"args": [
+					"-y",
+					"@modelcontextprotocol/server-filesystem",
+					"/path/to/your/projects"
+				]
+			}
+		]
+	}
+}
+```
+
+### 9.4 Start Inference Backend
 
 #### For MLX-LM:
 
@@ -344,7 +515,8 @@ llama-server -m ~/models/qwen2.5-coder-32b-instruct.Q4_K_M.gguf \
     --n-gpu-layers 999
 ```
 
-**Checklist - Phase 5:**
+### Checklist - Phase 5
+
 - [ ] Configuration directory created
 - [ ] agents.config.json created with local-only providers
 - [ ] No cloud providers in configuration
@@ -353,9 +525,9 @@ llama-server -m ~/models/qwen2.5-coder-32b-instruct.Q4_K_M.gguf \
 
 ---
 
-## Phase 6: Validation & Testing
+## 10. Phase 6: Validation & Testing
 
-### 6.1 Verify Backend Connectivity
+### 10.1 Verify Backend Connectivity
 
 ```bash
 # Test MLX-LM or llama.cpp endpoint
@@ -375,7 +547,7 @@ Expected response:
 }
 ```
 
-### 6.2 Test Nanocoder
+### 10.2 Test Nanocoder
 
 ```bash
 # Navigate to a project directory
@@ -385,7 +557,7 @@ cd ~/your-project
 nanocoder
 ```
 
-### 6.3 Verify Local-Only Operation
+### 10.3 Verify Local-Only Operation
 
 ```bash
 # Inside Nanocoder, check status
@@ -398,7 +570,7 @@ nanocoder
 > Hello, can you see this message?
 ```
 
-### 6.4 Network Verification
+### 10.4 Network Verification
 
 ```bash
 # Monitor network connections (in separate terminal)
@@ -407,7 +579,8 @@ lsof -i -n -P | grep -E "(nanocoder|ollama|llama|mlx)"
 # Should only show localhost connections
 ```
 
-**Checklist - Phase 6:**
+### Checklist - Phase 6
+
 - [ ] Backend API responding correctly
 - [ ] Nanocoder starts without errors
 - [ ] Can select local provider
@@ -416,9 +589,9 @@ lsof -i -n -P | grep -E "(nanocoder|ollama|llama|mlx)"
 
 ---
 
-## Phase 7: Production Deployment
+## 11. Phase 7: Production Deployment
 
-### 7.1 Create Startup Scripts
+### 11.1 Create Startup Script
 
 Create `~/bin/start-ai-coding.sh`:
 
@@ -452,10 +625,11 @@ echo "Ready to run: nanocoder"
 
 Make it executable:
 ```bash
+mkdir -p ~/bin
 chmod +x ~/bin/start-ai-coding.sh
 ```
 
-### 7.2 Create Shutdown Script
+### 11.2 Create Shutdown Script
 
 Create `~/bin/stop-ai-coding.sh`:
 
@@ -474,7 +648,12 @@ pkill -f "mlx_lm.server" 2>/dev/null
 echo "AI coding environment stopped"
 ```
 
-### 7.3 Optional: LaunchAgent for Auto-Start
+Make it executable:
+```bash
+chmod +x ~/bin/stop-ai-coding.sh
+```
+
+### 11.3 Optional: LaunchAgent for Auto-Start
 
 Create `~/Library/LaunchAgents/com.nanocoder.backend.plist`:
 
@@ -504,7 +683,7 @@ Load the LaunchAgent:
 launchctl load ~/Library/LaunchAgents/com.nanocoder.backend.plist
 ```
 
-### 7.4 Firewall Configuration (Maximum Privacy)
+### 11.4 Firewall Configuration (Maximum Privacy)
 
 ```bash
 # Block application from internet (optional)
@@ -512,7 +691,10 @@ sudo /usr/libexec/ApplicationFirewall/socketfilterfw --add $(which nanocoder)
 sudo /usr/libexec/ApplicationFirewall/socketfilterfw --blockapp $(which nanocoder)
 ```
 
-**Checklist - Phase 7:**
+Or use Little Snitch/Lulu to monitor and block all outgoing connections.
+
+### Checklist - Phase 7
+
 - [ ] Startup script created and tested
 - [ ] Shutdown script created and tested
 - [ ] (Optional) LaunchAgent configured
@@ -521,9 +703,42 @@ sudo /usr/libexec/ApplicationFirewall/socketfilterfw --blockapp $(which nanocode
 
 ---
 
-## Framework Template
+## 12. Memory Management
 
-Use this template to plan your deployment:
+### Optimal Model Sizes for 36GB
+
+| Available RAM | Recommended Max Model Size | Example |
+|--------------|---------------------------|---------|
+| 36GB (full) | ~24GB model | Qwen2.5-Coder 32B Q4 |
+| 28GB (with apps) | ~18GB model | DeepSeek-V2-Lite 16B Q8 |
+| 20GB (heavy use) | ~12GB model | Llama 3.2 11B Q8 |
+
+### Context Window Recommendations
+
+| Model Size | Recommended Context | Why |
+|------------|--------------------| --- |
+| 32B Q4 | 8192 tokens | Balance speed/context |
+| 16B Q8 | 16384 tokens | Room for larger context |
+| 7B Q8 | 32768 tokens | Maximum context possible |
+
+### Monitor Memory Usage
+
+```bash
+# Check memory pressure
+memory_pressure
+
+# Monitor in real-time
+top -o MEM
+
+# Check specific process
+ps aux | grep -E "(ollama|mlx|llama)"
+```
+
+---
+
+## 13. Framework Template
+
+Use this YAML template to plan your deployment:
 
 ```yaml
 # Nanocoder Deployment Plan
@@ -571,7 +786,7 @@ success_criteria:
 
 ---
 
-## Troubleshooting
+## 14. Troubleshooting
 
 ### Common Issues
 
@@ -580,8 +795,17 @@ success_criteria:
 | "Connection refused" | Backend not running | Start inference backend first |
 | Slow responses | Model too large | Use smaller model or Q4 quantization |
 | Out of memory | Insufficient RAM | Close apps, use smaller model |
-| Model loops | Context too small | Increase context size (8192+) |
+| Model loops/repeats | Context too small | Increase context size (8192+) |
 | "Model not found" | Wrong model name | Check model name in backend |
+
+### Context Length Issues
+
+If you experience the model repeating tool calls or getting into loops:
+
+**Solution:** Increase context size in your inference tool:
+- **Ollama:** `OLLAMA_NUM_CTX=8192`
+- **llama.cpp:** `--ctx-size 8192`
+- **MLX-LM:** Model-dependent
 
 ### Debug Commands
 
@@ -592,9 +816,6 @@ lsof -i :11434
 
 # Check memory usage
 top -o MEM
-
-# Check Nanocoder logs
-# (Logs are displayed in terminal)
 
 # Test API directly
 curl http://localhost:8080/v1/chat/completions \
@@ -607,17 +828,18 @@ curl http://localhost:8080/v1/chat/completions \
 
 ### Getting Help
 
-- **Documentation**: [docs/m4-max-private-setup.md](./m4-max-private-setup.md)
 - **GitHub Issues**: Report bugs and request features
-- **Discord**: Join the community for real-time help
+- **Discord**: [Join the community](https://discord.gg/ktPDV6rekE) for real-time help
 
 ---
 
-## Quick Reference Card
+## 15. Quick Reference
+
+### Quick Reference Card
 
 ```
 ┌────────────────────────────────────────────────────────────┐
-│                 NANOCODER QUICK REFERENCE                   │
+│              NANOCODER PRIVATE AI QUICK REFERENCE           │
 ├────────────────────────────────────────────────────────────┤
 │ START BACKEND:                                              │
 │   MLX-LM:    mlx_lm.server --model [MODEL] --port 8080     │
@@ -639,20 +861,37 @@ curl http://localhost:8080/v1/chat/completions \
 ├────────────────────────────────────────────────────────────┤
 │ TEST BACKEND:                                               │
 │   curl http://localhost:8080/v1/models                     │
+├────────────────────────────────────────────────────────────┤
+│ RECOMMENDED MODELS (36GB RAM):                              │
+│   Best:    Qwen2.5-Coder 32B Q4_K_M (~18GB)                │
+│   Fast:    DeepSeek-Coder-V2-Lite 16B Q8_0 (~16GB)         │
+│   Light:   Qwen2.5-Coder 7B Q8_0 (~8GB)                    │
 └────────────────────────────────────────────────────────────┘
 ```
 
+### Deployment Checklist
+
+- [ ] Install inference tool (MLX-LM or Ollama recommended)
+- [ ] Download appropriate model for your RAM
+- [ ] Create local-only `agents.config.json`
+- [ ] Verify no cloud providers in configuration
+- [ ] Test inference server is running (`curl localhost:8080/v1/models`)
+- [ ] Start Nanocoder and select local provider
+- [ ] (Optional) Configure firewall for complete isolation
+- [ ] (Optional) Set up local-only MCP servers
+
 ---
 
-## Version History
+## Version Information
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0 | November 2025 | Initial release |
+| Field | Value |
+|-------|-------|
+| **Guide Version** | 1.0 |
+| **Last Updated** | November 2025 |
+| **Tested On** | M4 Max 36GB, macOS Sequoia |
 
 ## Related Documentation
 
-- [M4 Max Private Setup Guide](./m4-max-private-setup.md)
 - [MCP Configuration Guide](./mcp-configuration.md)
 - [Contributing Guide](../CONTRIBUTING.md)
 - [README](../README.md)
